@@ -4,7 +4,6 @@ Created on Sat Feb 13 20:26:37 2016
 
 @author: Kazuki
 """
-
 from operator import itemgetter
 import numpy as np
 import time
@@ -23,7 +22,6 @@ P_CROSS = 0.9            #rate of cross
 GENERATION = 10         #num of generations
 SELECTION_METHOD = 1    #1 is tournament. so far, only tournament
 TOURNAMENT_SIZE = 5	    #num of tournament. only effective in tournament
-
 
 THRESHOLD = [None] * GLENGTH
 THRESHOLD[0] =  {'min':0, 'max':10}   #
@@ -98,7 +96,6 @@ class Pop:
         # if num of remains is odd num, generate one gene by mutation
         if( (POP - generated)%2 == 1):
             self.genes[generated].mutate()
-            self.genes[generated].f = 0.0
             generated += 1
         # cross or mutate
         while (generated < POP):
@@ -110,11 +107,9 @@ class Pop:
             else:
                 #Mutant 1
                 self.genes[generated].mutate()
-                self.genes[generated].f = 0.0
                 generated += 1
                 #Mutant 2
                 self.genes[generated].mutate()
-                self.genes[generated].f = 0.0
                 generated += 1
         
     def cross_gene(self,generated):
@@ -159,6 +154,7 @@ class Gene:
             if np.random.uniform() < P_MUTATE:
                 self.gtype[i] = np.random.randint(THRESHOLD[i]['min'], 
                 THRESHOLD[i]['max']+1)
+        self.f = 0.0
 #==============================================================================
 # initialize
 pop = Pop()
