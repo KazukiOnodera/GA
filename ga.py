@@ -16,7 +16,7 @@ np.random.seed(71)
 POP = 100              #num of population
 ELITE_RATE = 0.1      #rate of elite
 GLENGTH = 10
-P_MUTATE = 0.8         #prob of mutation. reciprocal of len(THRESHOLD) is better 
+P_MUTATE = 0.1         #prob of mutation. reciprocal of len(THRESHOLD) is better 
                        #total mutate are about POP*len(THRESHOLD)*P_MUTATE
 P_CROSS = 0.9            #rate of cross
 GENERATION = 10         #num of generations
@@ -131,9 +131,9 @@ class Pop:
     def cross_gtype(self,p1,p2,generated):
         cross_point = np.random.randint(1,GLENGTH) #1~GLENGTH-1
         self.genes[generated].gtype = p1[2][:cross_point]+p2[2][cross_point:]
-        self.genes[generated].f = 0.0
+        self.genes[generated].mutate()
         self.genes[generated+1].gtype = p2[2][:cross_point]+p1[2][cross_point:]
-        self.genes[generated+1].f = 0.0
+        self.genes[generated+1].mutate()
     
 class Gene:
     def __init__(self):
