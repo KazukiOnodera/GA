@@ -38,11 +38,6 @@ THRESHOLD[8] =  {'min':0, 'max':10}   #
 THRESHOLD[9] =  {'min':0, 'max':10}   #
 
 #==============================================================================
-class Ga:
-    def __init__(self,train,labels):
-        self.train = train
-        self.labels = labels
-        
 class Pop:
     def __init__(self):
         self.max_f = 0.0
