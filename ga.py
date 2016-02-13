@@ -36,7 +36,6 @@ THRESHOLD[6] =  {'min':0, 'max':10}   #
 THRESHOLD[7] =  {'min':0, 'max':10}   #
 THRESHOLD[8] =  {'min':0, 'max':10}   #
 THRESHOLD[9] =  {'min':0, 'max':10}   #
-
 #==============================================================================
 class Pop:
     def __init__(self):
@@ -160,7 +159,7 @@ class Gene:
             if np.random.uniform() < P_MUTATE:
                 self.gtype[i] = np.random.randint(THRESHOLD[i]['min'], 
                 THRESHOLD[i]['max']+1)
-
+#==============================================================================
 # initialize
 pop = Pop()
 
