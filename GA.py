@@ -12,7 +12,7 @@ import multiprocessing as mp
 
 #==============================================================================
 # set your seed
-#np.random.seed(71)
+np.random.seed(71)
 
 #==============================================================================
 
@@ -70,7 +70,7 @@ class GA:
         
     def _mk_genes_(self):
         for i in range(self.population):
-            self.genes[i] = Gene(self.glength, self.threshold, self.init_gtype)
+            self.genes[i] = Genes(self.glength, self.threshold, self.init_gtype)
             
     def _kill_genes_(self):
         # kill duplicated genes
@@ -80,7 +80,8 @@ class GA:
                 if self.random:
                     self[i].mk_random_gtype(self.threshold)
                 else:
-                    self[i].mk_step_gtype(self.step_rate)
+                    self[i].mk_random_gtype(self.threshold)
+#                    self[i].mk_step_gtype(self.step_rate)
             uniq_list.append(str(self[i].gtype))
         
     def multi(self, p):
@@ -153,7 +154,7 @@ class GA:
                 self[generated].mutate(self.p_mutate, self.threshold)
                 generated += 1
         
-    def _cross_gene_(self,generated):
+    def _cross_gene_(self, generated):
         if self.selection == 1:
             parent1 = self._select_parent_tournament_()
             parent2 = self._select_parent_tournament_()
@@ -165,8 +166,11 @@ class GA:
         max_selected = self.f_list[np.random.randint(0, self.population)]
         for i in range(self.tournament_size):
             tmp_parent = self.f_list[np.random.randint(0, self.population)]
-            if max_selected[1] < tmp_parent[1] == self.maximize:
-                max_selected = tmp_parent
+            if self.maximize is True:
+                if max_selected[1] < tmp_parent[1]:
+                    max_selected = tmp_parent
+                elif max_selected[1] > tmp_parent[1]:
+                    max_selected = tmp_parent
         return max_selected
     
     def _cross_gtype_(self, p1, p2, generated):
@@ -184,14 +188,11 @@ class GA:
                 self._print_f_()
             self._generate_population_()
             
-            if self.is_print:
-                print('best fitness:', self.max_f)
-                elapsed_time = time.time() - self.start
-                print("elapsed_time:{0}".format(elapsed_time))
-                print(elapsed_time/60, "min")
+            elapsed_time = time.time() - self.start
+            print('best fitness:{0}  elapsed_time:{1}'.format(self.max_f, elapsed_time))
         return
         
-class Gene:
+class Genes:
     def __init__(self, glength, threshold, init_gtype=None):
         self.fitness = 0.0
         if init_gtype is None:
@@ -208,18 +209,24 @@ class Gene:
     
     def mk_random_gtype(self, threshold):
         for i in range(len(self.gtype)):
-            self.gtype[i] = np.random.randint(threshold[i]['min'], 
-            threshold[i]['max']+1)
+            if threshold[i]['type']==int:
+                self.gtype[i] = np.random.randint(threshold[i]['min'], threshold[i]['max']+1)
+            elif threshold[i]['type']==float:
+                self.gtype[i] = np.random.uniform(threshold[i]['min'], threshold[i]['max'])
+            else:
+                raise Exception('Invalid type', threshold[i]['type'])
     
-    def mk_step_gtype(self, step_rate):
-        for i in range(len(self.gtype)):
-            self.gtype[i] = self.gtype[i] * (1+np.random.uniform(-step_rate, step_rate))
+#    def mk_step_gtype(self, step_rate):
+#        for i in range(len(self.gtype)):
+#            self.gtype[i] = self.gtype[i] * (1+np.random.uniform(-step_rate, step_rate))
         
     def mutate(self, p_mutate, threshold):
         for i in range(len(self.gtype)):
             if np.random.uniform() < p_mutate:
-                self.gtype[i] = np.random.randint(threshold[i]['min'], 
-                threshold[i]['max']+1)
+                if threshold[i]['type']==int:
+                    self.gtype[i] = np.random.randint(threshold[i]['min'], threshold[i]['max']+1)
+                elif threshold[i]['type']==float:
+                    self.gtype[i] = np.random.uniform(threshold[i]['min'], threshold[i]['max'])
         self.fitness = 0.0
 
 #==============================================================================
@@ -227,18 +234,18 @@ class Gene:
 if __name__ == "__main__":
     # initialize
     THRESHOLD = [None] * 10
-    THRESHOLD[0] =  {'min':0, 'max':10}   #
-    THRESHOLD[1] =  {'min':0, 'max':10}   #
-    THRESHOLD[2] =  {'min':0, 'max':10}   #
-    THRESHOLD[3] =  {'min':0, 'max':10}   #
-    THRESHOLD[4] =  {'min':0, 'max':10}   #
-    THRESHOLD[5] =  {'min':0, 'max':10}   #
-    THRESHOLD[6] =  {'min':0, 'max':10}   #
-    THRESHOLD[7] =  {'min':0, 'max':10}   #
-    THRESHOLD[8] =  {'min':0, 'max':10}   #
-    THRESHOLD[9] =  {'min':0, 'max':10}   #
+    THRESHOLD[0] =  {'min':0, 'max':10, 'type':int}   #
+    THRESHOLD[1] =  {'min':0, 'max':10, 'type':int}   #
+    THRESHOLD[2] =  {'min':0, 'max':10, 'type':int}   #
+    THRESHOLD[3] =  {'min':0, 'max':10, 'type':int}   #
+    THRESHOLD[4] =  {'min':0, 'max':10, 'type':int}   #
+    THRESHOLD[5] =  {'min':0, 'max':10, 'type':int}   #
+    THRESHOLD[6] =  {'min':0, 'max':10, 'type':int}   #
+    THRESHOLD[7] =  {'min':0, 'max':10, 'type':int}   #
+    THRESHOLD[8] =  {'min':0, 'max':10, 'type':int}   #
+    THRESHOLD[9] =  {'min':0, 'max':10, 'type':int}   #
     
-    ga = GA(THRESHOLD, generation=20, maximize=False)
+    ga = GA(THRESHOLD, generation=20, maximize=True, is_print=False)
     ga.fit()
     
     print(ga.genes[0].gtype)
