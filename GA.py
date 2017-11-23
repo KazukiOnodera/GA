@@ -8,11 +8,11 @@ Created on Sat Feb 13 20:26:37 2016
 from operator import itemgetter
 import numpy as np
 import time
-import multiprocessing as mp
+from joblib import Parallel, delayed
 
 #==============================================================================
 # set your seed
-np.random.seed(71)
+#np.random.seed(71)
 
 #==============================================================================
 
@@ -29,7 +29,7 @@ class GA:
     def __init__(self, threshold, feval=get_fitness1, init_gtype=None, random=True,
                  population=100, e_rate=0.1,  p_mutate=0.1, step_rate=0.1,
                  p_cross=0.9, generation=10, selection=1, tournament_size=5,
-                 is_print=True, maximize=True, seed=np.random.randint(9999), 
+                 is_print=True, maximize=True, seed=0, 
                  n_jobs=1):
         """
         parameters:
@@ -97,9 +97,8 @@ class GA:
         ret_ptr = []
         avg = 0.0
         # get f
-        if self.n_jobs>1:
-            pool = mp.Pool(self.n_jobs)
-            callback = pool.map(self.multi, range(self.population))
+        if self.n_jobs!=1:
+            callback = Parallel(n_jobs=self.n_jobs)( [delayed(self.multi)(i) for i in range(self.population)] )
             for i in range(self.population):
                 self[i].fitness = callback[i]
         else:
@@ -184,9 +183,12 @@ class GA:
         for i in range(self.generation):
             self._kill_genes_()
             self._calc_f_()
+            
             if self.is_print:
                 self._print_f_()
-            self._generate_population_()
+            
+            if i != self.generation-1:
+                self._generate_population_()
             
             elapsed_time = time.time() - self.start
             print('best fitness:{0}  elapsed_time:{1}'.format(self.max_f, elapsed_time))
@@ -245,7 +247,7 @@ if __name__ == "__main__":
     THRESHOLD[8] =  {'min':0, 'max':10, 'type':int}   #
     THRESHOLD[9] =  {'min':0, 'max':10, 'type':int}   #
     
-    ga = GA(THRESHOLD, generation=20, maximize=True, is_print=False)
+    ga = GA(THRESHOLD, generation=20, maximize=True, is_print=False, n_jobs=-1)
     ga.fit()
     
     print(ga.genes[0].gtype)
