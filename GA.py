@@ -7,6 +7,7 @@ Created on Sat Feb 13 20:26:37 2016
 
 from operator import itemgetter
 import numpy as np
+import pandas as pd
 import time
 from joblib import Parallel, delayed
 
@@ -27,9 +28,9 @@ def get_fitness3(gtype):
 
 class GA:
     def __init__(self, threshold, feval=get_fitness1, init_gtype=None, random=True,
-                 population=100, e_rate=0.1,  p_mutate=0.1, step_rate=0.1,
+                 population=100, e_rate=0.1,  p_mutate=0.1, maximize=True,
                  p_cross=0.9, generation=10, selection=1, tournament_size=5,
-                 is_print=True, maximize=True, seed=0, 
+                 is_print=True, seed=0, to_csv=None, reset_elite_score=False,
                  n_jobs=1):
         """
         parameters:
@@ -55,8 +56,6 @@ class GA:
         self.is_print = is_print
         self.maximize = maximize
         self.init_gtype = init_gtype
-        self.random = random
-        self.step_rate = step_rate
         self.n_jobs = n_jobs
         self.max_f = 0.0
         self.avg_f = 0.0
@@ -64,6 +63,8 @@ class GA:
         self.genes = [None] * self.population
         self._mk_genes_()
         np.random.seed(seed)
+        self.to_csv = to_csv
+        self.reset_elite_score = reset_elite_score
         
     def __getitem__(self, index):
         return self.genes[index]
@@ -77,15 +78,14 @@ class GA:
         uniq_list = []
         for i in range(self.population):
             while str(self[i].gtype) in uniq_list:
-                if self.random:
-                    self[i].mk_random_gtype(self.threshold)
+                if self.init_gtype is not None:
+                    self[i].mutate(self.p_mutate, self.threshold)
                 else:
                     self[i].mk_random_gtype(self.threshold)
-#                    self[i].mk_step_gtype(self.step_rate)
             uniq_list.append(str(self[i].gtype))
         
     def multi(self, p):
-        if self[p].fitness == 0:
+        if self[p].fitness == 0 or self.reset_elite_score == True:
             return self.feval(self[p].gtype)
         else:
              return self[p].fitness
@@ -103,7 +103,7 @@ class GA:
                 self[i].fitness = callback[i]
         else:
             for i in range(self.population):
-                if self[i].fitness == 0:
+                if self[i].fitness == 0 or self.reset_elite_score == True:
                     self[i].fitness = self.feval(self[i].gtype)
         # sort by f
         for i in range(self.population):
@@ -124,7 +124,7 @@ class GA:
         self.min_f = self[self.population-1].fitness
         
     def _print_f_(self):
-        for i in range(self.population):
+        for i in range(self.population)[:10]:
             print(self[i].fitness,self[i].gtype)
         
     def _generate_population_(self):
@@ -184,6 +184,11 @@ class GA:
             self._kill_genes_()
             self._calc_f_()
             
+            if self.to_csv is not None:
+                df = pd.DataFrame(list([[g.fitness]+g.gtype for g in self.genes]),
+                                  columns=['fitness']+list(range(self.glength)))
+                df.to_csv(self.to_csv.format(i), index=False)
+            
             if self.is_print:
                 self._print_f_()
             
@@ -215,12 +220,10 @@ class Genes:
                 self.gtype[i] = np.random.randint(threshold[i]['min'], threshold[i]['max']+1)
             elif threshold[i]['type']==float:
                 self.gtype[i] = np.random.uniform(threshold[i]['min'], threshold[i]['max'])
+                if 'round' in threshold[i]:
+                    self.gtype[i] = round(self.gtype[i], threshold[i]['round'])
             else:
                 raise Exception('Invalid type', threshold[i]['type'])
-    
-#    def mk_step_gtype(self, step_rate):
-#        for i in range(len(self.gtype)):
-#            self.gtype[i] = self.gtype[i] * (1+np.random.uniform(-step_rate, step_rate))
         
     def mutate(self, p_mutate, threshold):
         for i in range(len(self.gtype)):
@@ -229,6 +232,10 @@ class Genes:
                     self.gtype[i] = np.random.randint(threshold[i]['min'], threshold[i]['max']+1)
                 elif threshold[i]['type']==float:
                     self.gtype[i] = np.random.uniform(threshold[i]['min'], threshold[i]['max'])
+                    if 'round' in threshold[i]:
+                        self.gtype[i] = round(self.gtype[i], threshold[i]['round'])
+                else:
+                    raise Exception('Invalid type', threshold[i]['type'])
         self.fitness = 0.0
 
 #==============================================================================
@@ -236,18 +243,19 @@ class Genes:
 if __name__ == "__main__":
     # initialize
     THRESHOLD = [None] * 10
-    THRESHOLD[0] =  {'min':0, 'max':10, 'type':int}   #
-    THRESHOLD[1] =  {'min':0, 'max':10, 'type':int}   #
-    THRESHOLD[2] =  {'min':0, 'max':10, 'type':int}   #
-    THRESHOLD[3] =  {'min':0, 'max':10, 'type':int}   #
-    THRESHOLD[4] =  {'min':0, 'max':10, 'type':int}   #
-    THRESHOLD[5] =  {'min':0, 'max':10, 'type':int}   #
-    THRESHOLD[6] =  {'min':0, 'max':10, 'type':int}   #
-    THRESHOLD[7] =  {'min':0, 'max':10, 'type':int}   #
-    THRESHOLD[8] =  {'min':0, 'max':10, 'type':int}   #
-    THRESHOLD[9] =  {'min':0, 'max':10, 'type':int}   #
+    THRESHOLD[0] =  {'min':0, 'max':10, 'type':int, 'round':1}   #
+    THRESHOLD[1] =  {'min':0, 'max':10, 'type':int, 'round':1}   #
+    THRESHOLD[2] =  {'min':0, 'max':10, 'type':int, 'round':1}   #
+    THRESHOLD[3] =  {'min':0, 'max':10, 'type':int, 'round':1}   #
+    THRESHOLD[4] =  {'min':0, 'max':10, 'type':int, 'round':1}   #
+    THRESHOLD[5] =  {'min':0, 'max':10, 'type':int, 'round':1}   #
+    THRESHOLD[6] =  {'min':0, 'max':10, 'type':int, 'round':1}   #
+    THRESHOLD[7] =  {'min':0, 'max':10, 'type':int, 'round':1}   #
+    THRESHOLD[8] =  {'min':0, 'max':10, 'type':int, 'round':1}   #
+    THRESHOLD[9] =  {'min':0, 'max':10, 'type':int, 'round':1}   #
     
-    ga = GA(THRESHOLD, generation=20, maximize=True, is_print=False, n_jobs=-1)
+    ga = GA(THRESHOLD, generation=10, maximize=True, is_print=False, n_jobs=1,
+            to_csv='./tmp{}.csv')
     ga.fit()
     
     print(ga.genes[0].gtype)
