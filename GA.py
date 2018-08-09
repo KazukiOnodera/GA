@@ -83,12 +83,13 @@ class GA:
                 else:
                     self[i].mk_random_gtype(self.threshold)
             uniq_list.append(str(self[i].gtype))
-        
-    def multi(self, p):
-        if self[p].fitness == 0 or self.reset_elite_score == True:
-            return self.feval(self[p].gtype)
+    
+    @staticmethod
+    def multi(p, this):
+        if this[p].fitness == 0 or this.reset_elite_score == True:
+            return this.feval(this[p].gtype)
         else:
-             return self[p].fitness
+             return this[p].fitness
     
     def _calc_f_(self):
         tmp_fitness = []
@@ -98,7 +99,7 @@ class GA:
         avg = 0.0
         # get f
         if self.n_jobs!=1:
-            callback = Parallel(n_jobs=self.n_jobs)( [delayed(self.multi)(i) for i in range(self.population)] )
+            callback = Parallel(n_jobs=self.n_jobs)( [delayed(self.multi)((i, self)) for i in range(self.population)] )
             for i in range(self.population):
                 self[i].fitness = callback[i]
         else:
